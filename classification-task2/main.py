@@ -2,6 +2,7 @@ import time
 import json
 import pandas as pd
 from pandas import DataFrame
+from sklearn.preprocessing import StandardScaler
 
 from sklearn.metrics import accuracy_score
 from typing import List
@@ -12,8 +13,71 @@ def classify_with_NNR(data_trn: str, data_vld: str, df_tst: DataFrame) -> List:
     #  the data_tst dataframe should only(!) be used for the final predictions your return
     print(f'starting classification with {data_trn}, {data_vld}, predicting on {len(df_tst)} instances')
 
+    df_train = pd.read_csv(data_trn)
+    df_validation = pd.read_csv(data_vld)
+    x_train = df_train.iloc[:, :-1]
+    y_train = df_train.iloc[:, -1]
+    x_validation = df_validation.iloc[:, :-1]
+    y_validation = df_validation.iloc[:, -1]
+    x_test = df_tst.iloc[:, :-1]
+    y_test = df_tst.iloc[:, -1]
+    scaler = StandardScaler()
+    x_train_scaled = scaler.fit_transform(x_train)
+    x_validation_scaled = scaler.transform(x_validation)
+    x_test_scaled = scaler.transform(x_test)
+
+    radi = [round(0.1 * i, 1) for i in range(1, 21)]
+    best_Radius = None
+    best_Accuracy = 0
+
+    for radius in radi:
+        predications = []
+
+        for i in range(len(x_validation_scaled)):
+            x_val = x_validation.iloc[i]
+            distances = x_train_scaled.apply(lambda x: ((x - x_val) ** 2).sum() ** 0.5, axis=1)
+            neighbors = y_train[distances <= radius]
+
+            if not neighbors.empty():
+                predicated_label = neighbors.va
+
+
+
     predictions = list()  # todo: return a list of your predictions for test instances
     return predictions
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # todo: fill in your student ids
