@@ -1,4 +1,3 @@
-
 import numpy as np
 import pandas as pd
 from collections import Counter
@@ -8,7 +7,14 @@ from scipy.spatial.distance import cdist
 import time
 import json
 
+
 def load_and_scale_data(train_path, val_path):
+    """
+    Input: train/val CSV paths
+    Output: scaled x_train, y_train, x_val, y_val, scaler, original df_train
+    Loads data and applies standard scaling
+    """
+
     df_train = pd.read_csv(train_path)
     df_val = pd.read_csv(val_path)
 
@@ -26,6 +32,11 @@ def load_and_scale_data(train_path, val_path):
 
 
 def get_smart_radius_linspace(x_train_scaled, x_val_scaled, min_cap=0.8, max_cap=4.0, resolution=300):
+    """
+    Input: scaled x_train, x_val
+    Output: array of radius values
+    Creates range of radius values for tuning
+    """
     dist_matrix = cdist(x_val_scaled, x_train_scaled, metric="euclidean")
     mean_min_dist = np.mean(np.min(dist_matrix, axis=1))
 
@@ -36,11 +47,21 @@ def get_smart_radius_linspace(x_train_scaled, x_val_scaled, min_cap=0.8, max_cap
 
 
 def get_closest_label(mean_df_trn, vector):
+    """
+    Input: class mean vectors, test vector
+    Output: closest class label
+    Finds nearest class mean to the vector
+    """
     dists = np.linalg.norm(mean_df_trn.values - vector, axis=1)
     return mean_df_trn.index[np.argmin(dists)]
 
 
 def majority_vote(labels, default_label, global_counts=None):
+    """
+    Input: list of labels, default label, global class counts
+    Output: selected label
+    Returns majority label or breaks tie using global frequency
+    """
     if len(labels) == 0:
         return default_label
 
@@ -56,6 +77,12 @@ def majority_vote(labels, default_label, global_counts=None):
 
 
 def find_best_radius(x_train, y_train, x_val, y_val, radius_array, mean_df_trn):
+    """
+    Input: train/val data, radius array, class means
+    Output: best radius (float)
+    Selects radius with best validation accuracy
+    """
+
     best_radius = None
     best_accuracy = 0
 
@@ -80,6 +107,12 @@ def find_best_radius(x_train, y_train, x_val, y_val, radius_array, mean_df_trn):
 
 
 def classify_with_NNR(data_trn, data_vld, df_tst):
+    """
+    Input: train/val file paths, test DataFrame
+    Output: list of predicted labels
+    Runs NNR classification using tuned radius
+    """
+
     print(f'starting classification with {data_trn}, {data_vld}, predicting on {len(df_tst)} instances')
 
     x_train, y_train, x_val, y_val, scaler, df_train = load_and_scale_data(data_trn, data_vld)
@@ -91,7 +124,6 @@ def classify_with_NNR(data_trn, data_vld, df_tst):
 
     radius_array = get_smart_radius_linspace(x_train, x_val, min_cap=0.3, max_cap=4.0, resolution=300)
     best_radius = find_best_radius(x_train, y_train, x_val, y_val, radius_array, mean_df_trn)
-
 
     x_test = scaler.transform(df_tst.values)
     distances_test = cdist(x_test, x_train, metric="euclidean")
@@ -108,11 +140,8 @@ def classify_with_NNR(data_trn, data_vld, df_tst):
     return predictions
 
 
-
-
-
 # todo: fill in your student ids
-students = {'id1': '000000000', 'id2': '000000000'}
+students = {'id1': '314654484', 'id2': '302345749'}
 
 if __name__ == '__main__':
     start = time.time()
@@ -129,7 +158,7 @@ if __name__ == '__main__':
     if not predicted:  # empty prediction, should not happen in your implementation
         predicted = list(range(len(labels)))
 
-    assert(len(labels) == len(predicted))  # make sure you predict label for all test instances
+    assert (len(labels) == len(predicted))  # make sure you predict label for all test instances
     print(f'test set classification accuracy: {accuracy_score(labels, predicted)}')
 
-    print(f'total time: {round(time.time()-start, 0)} sec')
+    print(f'total time: {round(time.time() - start, 0)} sec')
